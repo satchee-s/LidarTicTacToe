@@ -1,23 +1,36 @@
 using System.Collections;
 using System.Collections.Generic;
+using TouchScript.Examples.Tap;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
+    [SerializeField] GameObject board;
+    [SerializeField] GameObject endGameScreen;
+    [SerializeField] Text text;
+
+
     [SerializeField] Sprite xSprite;
     [SerializeField] Sprite oSprite;
     [SerializeField] List<TileHandler> tileHandlers = new List<TileHandler>();
 
     bool isXTurn = true;
+    [HideInInspector] public bool canPlay = true;
     int[] tiles = new int[9]; //1 = x, 0 = o
     int playCount;
 
     public delegate void OnTileHit(SpriteRenderer sprite, int tileNum);
     public static OnTileHit tileHit;
+    public static GameManager instance;
 
     private void Start()
     {
-        tileHit += ChangeSprite;
+        if (instance == null)
+            instance = this;
+        else
+            Destroy(gameObject);
+            tileHit += ChangeSprite;
         for (int i = 0; i < 9; i++)
         {
             tiles[i] = i + 9;
@@ -65,26 +78,37 @@ public class GameManager : MonoBehaviour
         if (CheckIfWon())
         {
             string winner = isXTurn ? "X" : "O";
-            Debug.Log($"Game over! {winner} won!");
-            StartCoroutine(StartOver());
+            Debug.Log(winner + " wins");
+            StartCoroutine(StartOver($"{winner} wins!"));
         }
         else
             if (playCount >= 9)
         {
-            Debug.Log("Game over! It's a tie");
-            StartCoroutine(StartOver());
+            Debug.Log("tie");
+            StartCoroutine(StartOver("Tie"));
         }
     }
 
-    IEnumerator StartOver()
+    IEnumerator StartOver(string winMessage)
     {
-        yield return new WaitForSeconds(1.5f);
+        yield return new WaitForSeconds(0.5f);
         for (int i = 0; i < tileHandlers.Count; i++)
         {
             tileHandlers[i].CleanUp();
             tiles[i] = i + 9;
         }
-        isXTurn = true;
+
         playCount = 0;
+        canPlay = false;
+        isXTurn = true;
+        board.SetActive(false);
+        endGameScreen.SetActive(true);
+        text.text = winMessage;
+    }
+
+    public void OnRestart()
+    {
+        board.SetActive(true);
+        endGameScreen.SetActive(false);
     }
 }

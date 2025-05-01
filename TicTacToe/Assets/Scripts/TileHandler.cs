@@ -15,20 +15,19 @@ public class TileHandler : MonoBehaviour
         isHit = false;
     }
 
-    private void OnEnable()
+    private void Start()
     {
         sprite = GetComponent<SpriteRenderer>();
         GetComponent<TapGesture>().Tapped += tappedHandler;
     }
 
-    private void OnDisable()
+    private void OnDestroy()
     {
         GetComponent<TapGesture>().Tapped -= tappedHandler;
     }
     private void tappedHandler(object sender, EventArgs e)
     {
-        var gesture = sender as TapGesture;
-        HitData hit = gesture.GetScreenPositionHitData();
+        Debug.Log("tapped...");
         if (!isHit)
         {
             GameManager.tileHit?.Invoke(sprite, tileNumber);
