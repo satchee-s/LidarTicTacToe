@@ -2545,8 +2545,8 @@ MonoBehaviour:
   board: {fileID: 1063144942}
   endGameScreen: {fileID: 1779329176}
   text: {fileID: 1129782069}
-  xSprite: {fileID: 21300000, guid: c98af7908940ea3478c53c68895605ed, type: 3}
-  oSprite: {fileID: 21300000, guid: 6a2816645c2c7ee4d9b6f02ad33c066c, type: 3}
+  xSprite: {fileID: 21300000, guid: 5afd912d0fbed8642ab5066d30b87c2c, type: 3}
+  oSprite: {fileID: 21300000, guid: 708af9d5855a92a499be319dcd3eaf88, type: 3}
   tileHandlers:
   - {fileID: 2056825894}
   - {fileID: 1893626626}
@@ -2930,12 +2930,12 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: -2
-  m_Sprite: {fileID: 21300000, guid: b455e85b37cc5254faa1a28a74d9fa6c, type: 3}
+  m_Sprite: {fileID: 21300000, guid: a15ae7eb43feeae42bf46c104c4b6db1, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 15.81, y: 9.8}
+  m_Size: {x: 5.4, y: 3.04}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
