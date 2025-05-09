@@ -222,6 +222,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tileNumber: 7
+  symbolSpriteRenderer: {fileID: 0}
 --- !u!65 &87305100
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -452,6 +453,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tileNumber: 3
+  symbolSpriteRenderer: {fileID: 0}
 --- !u!65 &456616230
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -815,6 +817,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tileNumber: 6
+  symbolSpriteRenderer: {fileID: 0}
 --- !u!65 &675843926
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -883,7 +886,7 @@ GameObject:
   - component: {fileID: 739113779}
   - component: {fileID: 739113780}
   m_Layer: 0
-  m_Name: Square
+  m_Name: VerticalLineRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1051,7 +1054,7 @@ GameObject:
   - component: {fileID: 770014698}
   - component: {fileID: 770014699}
   m_Layer: 0
-  m_Name: Square (2)
+  m_Name: HorizontalLineTop
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1264,6 +1267,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tileNumber: 4
+  symbolSpriteRenderer: {fileID: 0}
 --- !u!65 &1029951006
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1567,6 +1571,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tileNumber: 2
+  symbolSpriteRenderer: {fileID: 0}
 --- !u!65 &1583659306
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1635,7 +1640,7 @@ GameObject:
   - component: {fileID: 1704592951}
   - component: {fileID: 1704592952}
   m_Layer: 0
-  m_Name: Square (3)
+  m_Name: HorizontalLineBottom
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2009,7 +2014,7 @@ GameObject:
   - component: {fileID: 1866316084}
   - component: {fileID: 1866316085}
   m_Layer: 0
-  m_Name: Square (1)
+  m_Name: VerticalLineLeft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2182,6 +2187,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tileNumber: 5
+  symbolSpriteRenderer: {fileID: 0}
 --- !u!65 &1884891969
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2339,6 +2345,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tileNumber: 1
+  symbolSpriteRenderer: {fileID: 0}
 --- !u!65 &1893626627
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2545,6 +2552,23 @@ MonoBehaviour:
   board: {fileID: 1063144942}
   endGameScreen: {fileID: 1779329176}
   text: {fileID: 1129782069}
+  horizontalBoardLines:
+  - {fileID: 1704592950}
+  - {fileID: 770014697}
+  verticalBoardLines:
+  - {fileID: 1866316083}
+  - {fileID: 739113778}
+  lineAnimationDuration: 0.4
+  animationDelayBetweenLines: 0.1
+  targetHorizontalLineScale: {x: 9.5, y: 0.25, z: 1}
+  targetVerticalLineScale: {x: 0.25, y: 9.5, z: 1}
+  easeType: 17
+  popInAnimationDuration: 0.4
+  popInEaseType: 27
+  flipDurationPart1: 0.2
+  flipDurationPart2: 0.2
+  flipEase: 16
+  symbolTargetScale: {x: 1, y: 1, z: 1}
   xSprite: {fileID: 21300000, guid: 5afd912d0fbed8642ab5066d30b87c2c, type: 3}
   oSprite: {fileID: 21300000, guid: 708af9d5855a92a499be319dcd3eaf88, type: 3}
   tileHandlers:
@@ -2557,6 +2581,11 @@ MonoBehaviour:
   - {fileID: 675843925}
   - {fileID: 87305099}
   - {fileID: 2106985507}
+  flashColor: {r: 0.9924419, g: 1, b: 0, a: 1}
+  flashToColorDuration: 0.1
+  flashToOriginalDuration: 0.1
+  numberOfFlashes: 5
+  delayBeforeEndScreen: 0.2
   canPlay: 1
 --- !u!1 &2056825888
 GameObject:
@@ -2715,6 +2744,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tileNumber: 0
+  symbolSpriteRenderer: {fileID: 0}
 --- !u!1 &2106985504
 GameObject:
   m_ObjectHideFlags: 0
@@ -2815,6 +2845,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tileNumber: 8
+  symbolSpriteRenderer: {fileID: 0}
 --- !u!65 &2106985508
 BoxCollider:
   m_ObjectHideFlags: 0

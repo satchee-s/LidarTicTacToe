@@ -6,109 +6,337 @@ using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
+    [Header("Game Elements")]
     [SerializeField] GameObject board;
     [SerializeField] GameObject endGameScreen;
     [SerializeField] Text text;
 
+    [Header("Board Lines Animation (LeanTween)")]
+    [SerializeField] List<GameObject> horizontalBoardLines;
+    [SerializeField] List<GameObject> verticalBoardLines;
+    [SerializeField] float lineAnimationDuration = 0.4f;
+    [SerializeField] float animationDelayBetweenLines = 0.1f;
+    [SerializeField] Vector3 targetHorizontalLineScale = Vector3.one; // e.g., (1, 0.1, 1) for length, thickness, depth
+    [SerializeField] Vector3 targetVerticalLineScale = Vector3.one;   // e.g., (0.1, 1, 1) for thickness, length, depth
+    [SerializeField] LeanTweenType easeType = LeanTweenType.easeOutExpo;
 
+    [Header("Symbol Animations (LeanTween)")]
+    [SerializeField] float popInAnimationDuration = 0.4f; // Total duration for the pop-in effect
+    [SerializeField] LeanTweenType popInEaseType = LeanTweenType.easeOutBack;
+
+    // --- Flip parameters
+    [SerializeField] float flipDurationPart1 = 0.2f;
+    [SerializeField] float flipDurationPart2 = 0.2f;
+    [SerializeField] LeanTweenType flipEase = LeanTweenType.easeInOutSine;
+
+    [SerializeField] Vector3 symbolTargetScale = Vector3.one;
+
+    [Header("Gameplay Sprites & Logic")]
     [SerializeField] Sprite xSprite;
     [SerializeField] Sprite oSprite;
     [SerializeField] List<TileHandler> tileHandlers = new List<TileHandler>();
 
+    [Header("Winning Symbol Flash Animation")]
+    [SerializeField] Color flashColor = new Color(1f, 1f, 0.5f, 1f); // Flash
+    [SerializeField] float flashToColorDuration = 0.1f; 
+    [SerializeField] float flashToOriginalDuration = 0.15f;
+    [SerializeField] int numberOfFlashes = 3;  
+    [SerializeField] float delayBeforeEndScreen = 0.5f;
+
+
     bool isXTurn = true;
-    [HideInInspector] public bool canPlay = true;
-    int[] tiles = new int[9]; //1 = x, 0 = o
+    [HideInInspector] public bool canPlay = false; // Start as false
+    int[] tiles = new int[9];
     int playCount;
 
-    public delegate void OnTileHit(SpriteRenderer sprite, int tileNum);
+    private List<int> winningTileIndices = new List<int>();
+
+    public delegate void OnTileHit(SpriteRenderer spriteRenderer, int tileNum);
     public static OnTileHit tileHit;
     public static GameManager instance;
+
+    private int totalLineTweensExpected = 0;
+    private int lineTweensCompleted = 0;
 
     private void Start()
     {
         if (instance == null)
             instance = this;
         else
-            Destroy(gameObject);
-            tileHit += ChangeSprite;
-        for (int i = 0; i < 9; i++)
         {
-            tiles[i] = i + 9;
+            Destroy(gameObject);
+            return;
+        }
+
+        tileHit += HandleTileHit;
+
+        if (board != null) board.SetActive(true); 
+        if (endGameScreen != null) endGameScreen.SetActive(false);
+
+        AnimateBoardLinesEntry();
+    }
+
+
+    void AnimateBoardLinesEntry()
+    {
+        InitializeGame(); 
+
+        canPlay = false;
+
+        lineTweensCompleted = 0;
+        totalLineTweensExpected = 0;
+
+        if (horizontalBoardLines != null)
+        {
+            foreach (GameObject line in horizontalBoardLines) { if (line != null) totalLineTweensExpected++; }
+        }
+        if (verticalBoardLines != null)
+        {
+            foreach (GameObject line in verticalBoardLines) { if (line != null) totalLineTweensExpected++; }
+        }
+
+        if (totalLineTweensExpected == 0)
+        {
+            Debug.LogWarning("GameManager: No board lines assigned for animation. Starting game immediately.");
+            canPlay = true;
+            return;
+        }
+
+        float currentDelay = 0f;
+
+        // Animate Horizontal Lines
+        if (horizontalBoardLines != null)
+        {
+            foreach (GameObject line in horizontalBoardLines)
+            {
+                if (line != null)
+                {
+                    line.SetActive(true);
+                    line.transform.localScale = new Vector3(0f, targetHorizontalLineScale.y, targetHorizontalLineScale.z);
+                    LeanTween.scaleX(line, targetHorizontalLineScale.x, lineAnimationDuration)
+                        .setEase(easeType)
+                        .setDelay(currentDelay)
+                        .setOnComplete(OnSingleLineAnimationComplete);
+                    currentDelay += animationDelayBetweenLines;
+                }
+            }
+        }
+
+        // Animate Vertical Lines
+        if (verticalBoardLines != null)
+        {
+            foreach (GameObject line in verticalBoardLines)
+            {
+                if (line != null)
+                {
+                    line.SetActive(true);
+                    line.transform.localScale = new Vector3(targetVerticalLineScale.x, 0f, targetVerticalLineScale.z);
+                    LeanTween.scaleY(line, targetVerticalLineScale.y, lineAnimationDuration)
+                        .setEase(easeType)
+                        .setDelay(currentDelay)
+                        .setOnComplete(OnSingleLineAnimationComplete);
+                    currentDelay += animationDelayBetweenLines;
+                }
+            }
         }
     }
 
-    void ChangeSprite(SpriteRenderer sprite, int tileNum)
+
+    void OnSingleLineAnimationComplete()
     {
-        if (isXTurn)
-            sprite.sprite = xSprite;
+        lineTweensCompleted++;
+        if (lineTweensCompleted >= totalLineTweensExpected)
+        {
+            InitializeGameAndAllowPlay();
+        }
+    }
+
+    void AnimatePopIn(GameObject symbolGO)
+    {
+        symbolGO.SetActive(true);
+        symbolGO.transform.localScale = Vector3.zero;
+
+        LeanTween.scale(symbolGO, symbolTargetScale, popInAnimationDuration)
+            .setEase(popInEaseType);
+    }
+
+    void AnimateFlip(GameObject symbolGO, Sprite newSpriteToShow)
+    {
+        symbolGO.SetActive(true);
+        symbolGO.transform.localScale = symbolTargetScale;
+
+        LeanTween.scaleY(symbolGO, 0f, flipDurationPart1)
+            .setEase(flipEase)
+            .setOnComplete(() => 
+            {
+                SpriteRenderer sr = symbolGO.GetComponent<SpriteRenderer>();
+                if (sr != null)
+                {
+                    sr.sprite = newSpriteToShow;
+                }
+
+                LeanTween.scaleY(symbolGO, symbolTargetScale.y, flipDurationPart2)
+                    .setEase(flipEase);
+            });
+    }
+    void InitializeGameAndAllowPlay()
+    {
+        Debug.Log("Board lines animation complete. Allowing play.");
+        canPlay = true;
+    }
+
+    void InitializeGame()
+    {
+        for (int i = 0; i < 9; i++) { tiles[i] = i + 9; }
+        playCount = 0;
+        isXTurn = true;
+        if (tileHandlers != null)
+        {
+            foreach (TileHandler th in tileHandlers) { if (th != null) th.CleanUp(); }
+        }
+        if (board != null) board.SetActive(true);
+        if (endGameScreen != null) endGameScreen.SetActive(false);
+    }
+
+    void AnimateSymbolFlash(SpriteRenderer symbolSpriteRenderer)
+    {
+        if (symbolSpriteRenderer == null || symbolSpriteRenderer.sprite == null)
+        {
+            Debug.LogWarning("Attempted to flash a null sprite or SpriteRenderer.");
+            return;
+        }
+
+        Color originalColor = symbolSpriteRenderer.color;
+
+        LTSeq sequence = LeanTween.sequence();
+        for (int i = 0; i < numberOfFlashes; i++)
+        {
+            sequence.append(LeanTween.color(symbolSpriteRenderer.gameObject, flashColor, flashToColorDuration));
+            sequence.append(LeanTween.color(symbolSpriteRenderer.gameObject, originalColor, flashToOriginalDuration));
+        }
+    }
+    void HandleTileHit(SpriteRenderer tileSpriteRenderer, int tileNum)
+
+    {
+
+        if (!canPlay || tileNum < 0 || tileNum >= tiles.Length) return;
+
+        int previousTileState = tiles[tileNum];
+        int currentPlayerMark = isXTurn ? 1 : 0;
+        bool shouldToggleTurn;
+        GameObject symbolGameObject = tileSpriteRenderer.gameObject;
+
+        if (previousTileState >= 9)
+        {
+            playCount++;
+            shouldToggleTurn = true;
+            tiles[tileNum] = currentPlayerMark;
+            tileSpriteRenderer.sprite = isXTurn ? xSprite : oSprite;
+            AnimatePopIn(symbolGameObject);
+        }
         else
-            sprite.sprite = oSprite;
+        {
+            if (previousTileState == currentPlayerMark)
+            {
+                shouldToggleTurn = false;
+            }
+            else
+            {
+                shouldToggleTurn = true;
+                tiles[tileNum] = currentPlayerMark;
+                Sprite newSpriteForFlip = isXTurn ? xSprite : oSprite;
+                AnimateFlip(symbolGameObject, newSpriteForFlip);
+            }
+        }
 
-        tiles[tileNum] = isXTurn ? 1 : 0;
-        playCount++;
+        // --- Check for game over conditions ---
+        if (CheckIfWon())
+        {
+            canPlay = false;
+            string winner = isXTurn ? "X" : "O";
+            Debug.Log(winner + " wins");
 
-        GameOver();
-        isXTurn = !isXTurn;
+            foreach (int index in winningTileIndices)
+            {
+                if (index >= 0 && index < tileHandlers.Count && tileHandlers[index] != null)
+                {
+                    SpriteRenderer srToFlash = tileHandlers[index].GetSpriteRenderer();
+                    if (srToFlash != null && srToFlash.sprite != null)
+                    {
+                        AnimateSymbolFlash(srToFlash);
+                    }
+                }
+            }
+
+            float totalFlashAnimationTime = numberOfFlashes * (flashToColorDuration + flashToOriginalDuration);
+            StartCoroutine(DelayedStartOver(totalFlashAnimationTime + delayBeforeEndScreen, $"{winner} wins!"));
+        }
+        else if (playCount >= 9) 
+        {
+            canPlay = false;
+            Debug.Log("Tie");
+            StartCoroutine(StartOver("Tie"));
+        }
+        else
+        {
+            if (shouldToggleTurn)
+            {
+                isXTurn = !isXTurn;
+            }
+        }
     }
 
     public bool CheckIfWon()
     {
-        if (tiles[3] == tiles[4] && tiles[3] == tiles[5])
-            return true;
-        else if (tiles[1] == tiles[4] && tiles[1] == tiles[7])
-            return true;
-        else if (tiles[0] == tiles[4] && tiles[8] == tiles[0])
-            return true;
-        else if (tiles[2] == tiles[4] && tiles[2] == tiles[6])
-            return true;
-        if (tiles[0] == tiles[1] && tiles[2] == tiles[0])
-            return true;
-        else if (tiles[0] == tiles[3] && tiles[0] == tiles[6])
-            return true;
-        if (tiles[6] == tiles[7] && tiles[6] == tiles[8])
-            return true;
-        else if (tiles[2] == tiles[5] && tiles[2] == tiles[8])
-            return true;
+        winningTileIndices.Clear();
 
+        int[,] lines = new int[,]
+        {
+            {0,1,2}, {3,4,5}, {6,7,8},
+            {0,3,6}, {1,4,7}, {2,5,8},
+            {0,4,8}, {2,4,6}           
+        };
+
+        for (int i = 0; i < lines.GetLength(0); i++)
+        {
+            int a = lines[i, 0];
+            int b = lines[i, 1];
+            int c = lines[i, 2];
+
+            if (tiles[a] <= 1 && tiles[a] == tiles[b] && tiles[a] == tiles[c])
+            {
+                winningTileIndices.Add(a);
+                winningTileIndices.Add(b);
+                winningTileIndices.Add(c);
+                return true;
+            }
+        }
         return false;
     }
 
-    void GameOver()
+    IEnumerator DelayedStartOver(float delay, string message)
     {
-        if (CheckIfWon())
-        {
-            string winner = isXTurn ? "X" : "O";
-            Debug.Log(winner + " wins");
-            StartCoroutine(StartOver($"{winner} wins!"));
-        }
-        else
-            if (playCount >= 9)
-        {
-            Debug.Log("tie");
-            StartCoroutine(StartOver("Tie"));
-        }
+        yield return new WaitForSeconds(delay);
+        StartCoroutine(StartOver(message));
     }
 
     IEnumerator StartOver(string winMessage)
     {
-        yield return new WaitForSeconds(0.5f);
-        for (int i = 0; i < tileHandlers.Count; i++)
-        {
-            tileHandlers[i].CleanUp();
-            tiles[i] = i + 9;
-        }
-
-        playCount = 0;
         canPlay = false;
-        isXTurn = true;
-        board.SetActive(false);
-        endGameScreen.SetActive(true);
-        text.text = winMessage;
+        yield return new WaitForSeconds(0.5f);
+        if (board != null) board.SetActive(false);
+        if (endGameScreen != null) endGameScreen.SetActive(true);
+        if (text != null) text.text = winMessage;
     }
-
     public void OnRestart()
     {
-        board.SetActive(true);
-        endGameScreen.SetActive(false);
+        Debug.Log("Restarting game...");
+
+        canPlay = false;
+
+        if (board != null) board.SetActive(true);
+        if (endGameScreen != null) endGameScreen.SetActive(false);
+
+        AnimateBoardLinesEntry();
     }
 }
