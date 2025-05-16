@@ -260,7 +260,8 @@ public class GameManager : MonoBehaviour
             {
                 if (index >= 0 && index < tileHandlers.Count && tileHandlers[index] != null)
                 {
-                    SpriteRenderer srToFlash = tileHandlers[index].GetSpriteRenderer();
+                    //SpriteRenderer srToFlash = tileHandlers[index].GetSpriteRenderer();
+                    SpriteRenderer srToFlash = tileHandlers[index].GetSymbolSpriteRenderer();
                     if (srToFlash != null && srToFlash.sprite != null)
                     {
                         AnimateSymbolFlash(srToFlash);

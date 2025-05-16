@@ -1,54 +1,68 @@
 using System;
 using TouchScript.Gestures;
-using TouchScript.Hit;
 using UnityEngine;
 
 public class TileHandler : MonoBehaviour
 {
     [SerializeField] int tileNumber;
-    //SpriteRenderer sprite;
-    //bool isHit;
-    [Tooltip("Assign the child GameObject's SpriteRenderer that displays X/O symbols.")]
-    [SerializeField] SpriteRenderer symbolSpriteRenderer;
+
+    [Tooltip("IMPORTANT: Assign the SpriteRenderer component from the CHILD GameObject that displays the X/O symbol here.")]
+    [SerializeField] SpriteRenderer symbolSpriteRenderer; // This MUST be assigned in the Inspector
+
+    private TapGesture tapGestureComponent; // For TouchScript event handling
 
     private void Awake()
     {
-        symbolSpriteRenderer = GetComponent<SpriteRenderer>();
+        // We rely on symbolSpriteRenderer being assigned in the Inspector.
         if (symbolSpriteRenderer == null)
         {
-            Debug.LogError($"TileHandler on GameObject '{gameObject.name}' could not find a SpriteRenderer component attached to it.", this);
+            Debug.LogError($"TileHandler on '{gameObject.name}': SymbolSpriteRenderer is not assigned in the Inspector. Please assign the child's SpriteRenderer.", this);
         }
     }
+
+    // Using OnEnable and OnDisable for event subscription is generally more robust
+    // especially if tiles can be enabled/disabled.
+    private void OnEnable()
+    {
+        tapGestureComponent = GetComponent<TapGesture>();
+        if (tapGestureComponent != null)
+        {
+            tapGestureComponent.Tapped += TappedHandler;
+        }
+        else
+        {
+            // Only log error if the component is expected to always be there.
+            // If TapGesture is optional on some tiles, this might be a warning or handled differently.
+            Debug.LogError($"TapGesture component not found on {gameObject.name}. Tap input will not work for this tile.", this);
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (tapGestureComponent != null)
+        {
+            tapGestureComponent.Tapped -= TappedHandler;
+        }
+    }
+
     public void CleanUp()
     {
         if (symbolSpriteRenderer != null)
         {
-            symbolSpriteRenderer.sprite = null; 
-            symbolSpriteRenderer.gameObject.transform.localScale = Vector3.one;
+            symbolSpriteRenderer.sprite = null; // Clear the displayed symbol
+            // Reset the symbol's visual scale to its default (usually 1,1,1 locally for the child)
+            // The pop/flip animations will set the scale again when a symbol is placed.
+            symbolSpriteRenderer.transform.localScale = Vector3.one;
         }
     }
 
+    // This public getter is used by GameManager to get the correct SpriteRenderer for animations
     public SpriteRenderer GetSymbolSpriteRenderer()
     {
         return symbolSpriteRenderer;
     }
 
-    private void Start()
-    {
-        symbolSpriteRenderer = GetComponent<SpriteRenderer>();
-        GetComponent<TapGesture>().Tapped += TappedHandler;
-    }
-
-    private void OnDestroy()
-    {
-        GetComponent<TapGesture>().Tapped -= TappedHandler;
-    }
-
-    public SpriteRenderer GetSpriteRenderer()
-    {
-        return symbolSpriteRenderer;
-    }
-    private void TappedHandler(object sender, EventArgs e) // Or whatever your tap event handler is
+    private void TappedHandler(object sender, EventArgs e)
     {
         Debug.Log($"TAP DETECTED on GameObject: '{gameObject.name}' with Tile Number: {tileNumber}", this.gameObject);
 
@@ -56,32 +70,17 @@ public class TileHandler : MonoBehaviour
         {
             if (symbolSpriteRenderer != null)
             {
-                // Invoke GameManager's event with the SYMBOL'S SpriteRenderer
+                // Invoke GameManager's event, passing the SYMBOL'S SpriteRenderer (from the child GameObject)
                 GameManager.tileHit?.Invoke(symbolSpriteRenderer, tileNumber);
             }
             else
             {
-                Debug.LogError($"SymbolSpriteRenderer not assigned in TileHandler for {gameObject.name}, cannot process tap.", this);
+                // This error would ideally be caught by the Awake check, but good to have defensive checks.
+                Debug.LogError($"SymbolSpriteRenderer not assigned or found in TileHandler for {gameObject.name}, cannot process tap.", this);
             }
         }
     }
 
-    // private TapGesture tapGestureComponent;
-    // private void OnEnable()
-    // {
-    //     tapGestureComponent = GetComponent<TapGesture>();
-    //     if (tapGestureComponent != null)
-    //     {
-    //         tapGestureComponent.Tapped += TappedHandler;
-    //     } else {
-    //          Debug.LogError($"TapGesture component not found on {gameObject.name}", this);
-    //     }
-    // }
-    // private void OnDisable()
-    // {
-    //     if (tapGestureComponent != null)
-    //     {
-    //         tapGestureComponent.Tapped -= TappedHandler;
-    //     }
-    // }
+    // You had two identical GetSpriteRenderer/GetSymbolSpriteRenderer methods; one is enough.
+    // I've kept GetSymbolSpriteRenderer as it's more descriptive.
 }
