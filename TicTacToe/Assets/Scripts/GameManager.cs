@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TouchScript.Examples.Tap;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
@@ -16,12 +17,12 @@ public class GameManager : MonoBehaviour
     [SerializeField] List<GameObject> verticalBoardLines;
     [SerializeField] float lineAnimationDuration = 0.4f;
     [SerializeField] float animationDelayBetweenLines = 0.1f;
-    [SerializeField] Vector3 targetHorizontalLineScale = Vector3.one; // e.g., (1, 0.1, 1) for length, thickness, depth
-    [SerializeField] Vector3 targetVerticalLineScale = Vector3.one;   // e.g., (0.1, 1, 1) for thickness, length, depth
+    [SerializeField] Vector3 targetHorizontalLineScale = Vector3.one;
+    [SerializeField] Vector3 targetVerticalLineScale = Vector3.one;
     [SerializeField] LeanTweenType easeType = LeanTweenType.easeOutExpo;
 
     [Header("Symbol Animations (LeanTween)")]
-    [SerializeField] float popInAnimationDuration = 0.4f; // Total duration for the pop-in effect
+    [SerializeField] float popInAnimationDuration = 0.4f;
     [SerializeField] LeanTweenType popInEaseType = LeanTweenType.easeOutBack;
 
     // --- Flip parameters
@@ -37,15 +38,16 @@ public class GameManager : MonoBehaviour
     [SerializeField] List<TileHandler> tileHandlers = new List<TileHandler>();
 
     [Header("Winning Symbol Flash Animation")]
-    [SerializeField] Color flashColor = new Color(1f, 1f, 0.5f, 1f); // Flash
+    [SerializeField] Color flashColor = new Color(1f, 1f, 0.5f, 1f); 
     [SerializeField] float flashToColorDuration = 0.1f; 
     [SerializeField] float flashToOriginalDuration = 0.15f;
     [SerializeField] int numberOfFlashes = 3;  
     [SerializeField] float delayBeforeEndScreen = 0.5f;
 
+    [SerializeField] TextMeshProUGUI turnIndicatorText;
 
     bool isXTurn = true;
-    [HideInInspector] public bool canPlay = false; // Start as false
+    [HideInInspector] public bool canPlay = false;
     int[] tiles = new int[9];
     int playCount;
 
@@ -82,6 +84,11 @@ public class GameManager : MonoBehaviour
         InitializeGame(); 
 
         canPlay = false;
+
+        if (turnIndicatorText != null)
+        {
+            turnIndicatorText.text = "";
+        }
 
         lineTweensCompleted = 0;
         totalLineTweensExpected = 0;
@@ -183,6 +190,7 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("Board lines animation complete. Allowing play.");
         canPlay = true;
+        UpdateTurnIndicatorText();
     }
 
     void InitializeGame()
@@ -194,8 +202,8 @@ public class GameManager : MonoBehaviour
         {
             foreach (TileHandler th in tileHandlers) { if (th != null) th.CleanUp(); }
         }
-        if (board != null) board.SetActive(true);
-        if (endGameScreen != null) endGameScreen.SetActive(false);
+        //if (board != null) board.SetActive(true);
+        //if (endGameScreen != null) endGameScreen.SetActive(false);
     }
 
     void AnimateSymbolFlash(SpriteRenderer symbolSpriteRenderer)
@@ -215,10 +223,10 @@ public class GameManager : MonoBehaviour
             sequence.append(LeanTween.color(symbolSpriteRenderer.gameObject, originalColor, flashToOriginalDuration));
         }
     }
+ 
+
     void HandleTileHit(SpriteRenderer tileSpriteRenderer, int tileNum)
-
     {
-
         if (!canPlay || tileNum < 0 || tileNum >= tiles.Length) return;
 
         int previousTileState = tiles[tileNum];
@@ -249,18 +257,21 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // --- Check for game over conditions ---
         if (CheckIfWon())
         {
             canPlay = false;
             string winner = isXTurn ? "X" : "O";
-            Debug.Log(winner + " wins");
+            Debug.Log(winner + " wins!");
+
+            if (turnIndicatorText != null)
+            {
+                turnIndicatorText.text = $"{winner} Wins!";
+            }
 
             foreach (int index in winningTileIndices)
             {
                 if (index >= 0 && index < tileHandlers.Count && tileHandlers[index] != null)
                 {
-                    //SpriteRenderer srToFlash = tileHandlers[index].GetSpriteRenderer();
                     SpriteRenderer srToFlash = tileHandlers[index].GetSymbolSpriteRenderer();
                     if (srToFlash != null && srToFlash.sprite != null)
                     {
@@ -270,19 +281,26 @@ public class GameManager : MonoBehaviour
             }
 
             float totalFlashAnimationTime = numberOfFlashes * (flashToColorDuration + flashToOriginalDuration);
-            StartCoroutine(DelayedStartOver(totalFlashAnimationTime + delayBeforeEndScreen, $"{winner} wins!"));
+            StartCoroutine(DelayedStartOver(totalFlashAnimationTime + delayBeforeEndScreen, $"{winner} Wins!"));
         }
-        else if (playCount >= 9) 
+        else if (playCount >= 9)
         {
             canPlay = false;
             Debug.Log("Tie");
-            StartCoroutine(StartOver("Tie"));
+
+            if (turnIndicatorText != null)
+            {
+                turnIndicatorText.text = "It's a Tie!";
+            }
+
+            StartCoroutine(StartOver("Tie")); 
         }
-        else
+        else 
         {
             if (shouldToggleTurn)
             {
                 isXTurn = !isXTurn;
+                UpdateTurnIndicatorText(); 
             }
         }
     }
@@ -333,11 +351,26 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("Restarting game...");
 
-        canPlay = false;
-
         if (board != null) board.SetActive(true);
         if (endGameScreen != null) endGameScreen.SetActive(false);
 
         AnimateBoardLinesEntry();
+    }
+
+    void UpdateTurnIndicatorText()
+    {
+        if (turnIndicatorText == null) return;
+
+        if (canPlay)
+        {
+            if (isXTurn)
+            {
+                turnIndicatorText.text = "Player X's Turn";
+            }
+            else
+            {
+                turnIndicatorText.text = "Player O's Turn";
+            }
+        }
     }
 }
